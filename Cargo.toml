@@ -4,3 +4,5 @@ version = "0.0.0-dev"
 edition = "2021"
 
 [dependencies]
+# The rand package is only used for development performance benchmarking with example data.
+rand = "0.8.5"

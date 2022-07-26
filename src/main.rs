@@ -13,22 +13,44 @@ mod test_serialisation;
 mod test_ascii_optimisation;
 
 fn main() {
-    let sample: Map = HashMap::from([
-        (
-            "hello".to_string(),
-            ("world".to_string(), "2022-04-12T22:10:57+02:00".to_string()),
-        ),
-        (
-            "foo".to_string(),
-            ("bar".to_string(), "2022-04-12T22:10:57+02:00".to_string()),
-        ),
-        (
-            "bake".to_string(),
-            ("eggs".to_string(), "2022-04-12T22:10:57+02:00".to_string()),
-        ),
-    ]);
+    // let sample: Map = HashMap::from([
+    //     (
+    //         "hello".to_string(),
+    //         ("world".to_string(), "2022-04-12T22:10:57+02:00".to_string()),
+    //     ),
+    //     (
+    //         "foo".to_string(),
+    //         ("bar".to_string(), "2022-04-12T22:10:57+02:00".to_string()),
+    //     ),
+    //     (
+    //         "bake".to_string(),
+    //         ("eggs".to_string(), "2022-04-12T22:10:57+02:00".to_string()),
+    //     ),
+    // ]);
+    let sample: Map = {
+        use rand::{distributions::Alphanumeric, Rng};
+
+        let mut map: Map = HashMap::new();
+
+        for i in 0..50_000 {
+            let key = format!("key{}", i);
+            let value = {
+                let s: String = rand::thread_rng()
+                    .sample_iter(&Alphanumeric)
+                    .take(64)
+                    .map(char::from)
+                    .collect();
+
+                (s, "2100-07-26T14:17:06+00:00".to_string())
+            };
+            map.insert(key, value);
+        }
+
+        map
+    };
 
     println!("Firefly specific encoder:");
+    println!("Applying tests to {} items...", sample.len());
 
     let start = Instant::now();
     let buffer = to_vec(sample).unwrap();

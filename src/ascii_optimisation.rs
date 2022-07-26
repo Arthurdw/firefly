@@ -22,7 +22,7 @@
 ///
 /// ```
 /// // We are able to compress 16 bytes into 14:
-/// let mut compressed = Vec::with_capacity(9);
+/// let mut compressed = Vec::with_capacity(14);
 /// let mut current_byte = 1;
 ///
 /// for i in 0..17 {
