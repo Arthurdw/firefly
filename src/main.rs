@@ -1,4 +1,3 @@
-// TODO: Make use of multiprocessing
 use std::{collections::HashMap, fs::File, io::Write, time::Instant};
 
 use crate::ascii_optimisation::{compress_slice, decompress_slice};
