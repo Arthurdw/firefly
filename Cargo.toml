@@ -1,0 +1,6 @@
+[package]
+name = "firefly"
+version = "0.0.0-dev"
+edition = "2021"
+
+[dependencies]
