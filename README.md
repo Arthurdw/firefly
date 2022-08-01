@@ -6,7 +6,7 @@ sessions throughout the platform.
 
 ## Query Language
 
-Firefly only has three data operators, `NEW`, `GET`, `DROP`. We'll walk over
+Firefly only has four data operators, `NEW`, `GET`, `DROP` and `DROPALL`. We'll walk over
 each one.
 
 ### Important note on values
