@@ -4,8 +4,11 @@ version = "0.0.0-dev"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.59"
 log = "0.4.17"
 pretty_env_logger = "0.4.0"
 # The rand package is only used for development performance benchmarking with example data.
 rand = "0.8.5"
+strum = "0.24.1"
+strum_macros = "0.24.2"
 tokio = { version = "1.20.1", features = ["full"] }

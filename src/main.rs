@@ -9,13 +9,20 @@ use tokio::net::TcpListener;
 use std::env;
 use std::error::Error;
 
+use crate::query::parse_query;
+
+mod query;
+
+#[cfg(test)]
+mod test_query;
+
 static LOGGING_ENV: &'static str = "LOG_LEVEL";
 static BIND_ADDR: &'static str = "127.0.0.1:46600";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     if env::var_os(LOGGING_ENV).is_none() {
-        env::set_var(LOGGING_ENV, "INFO");
+        env::set_var(LOGGING_ENV, "DEBUG");
     }
 
     pretty_env_logger::init_custom_env(LOGGING_ENV);
@@ -24,7 +31,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("Listening on: {}", BIND_ADDR);
 
     loop {
-        let (mut socket, _) = listener.accept().await?;
+        let (mut socket, addr) = listener.accept().await?;
+        info!("New connection from {}", addr);
 
         tokio::spawn(async move {
             let mut buf = vec![0; 1024];
@@ -39,9 +47,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     return;
                 }
 
-                info!("{:?}", String::from_utf8_lossy(&buf[..n]));
+                let message = String::from_utf8(buf[..n].to_vec()).unwrap_or_default();
+                let mut res = "Successfully executed query!".to_string();
+                let valid_message = message != "" && message != "\n" && message.is_ascii();
+
+                if valid_message {
+                    if let Ok((query_type, arguments)) = parse_query(message.clone()) {
+                        debug!("{:?}", message);
+                        res.push_str(&format!(" ({:?}: {:?})", query_type, arguments));
+                    } else {
+                        res = "Could not properly parse query!".to_string();
+                    }
+                } else {
+                    res = "Invalid or empty query (all values must be valid ascii).".to_string();
+                }
+
+                res.push('\n');
+
                 socket
-                    .write_all(&buf[0..n])
+                    .write_all(res.as_bytes())
                     .await
                     .expect("failed to write data to socket");
             }

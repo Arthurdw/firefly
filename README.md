@@ -6,7 +6,7 @@ sessions throughout the platform.
 
 ## Query Language
 
-Firefly only has four data operators, `NEW`, `GET`, `DROP` and `DROPALL`. We'll walk over
+Firefly only has three data operators, `NEW`, `GET`, `DROP`. We'll walk over
 each one.
 
 ### Important note on values
@@ -39,7 +39,7 @@ will use 0 _(aka no expiry)_.
 ```ffly
 NEW '{key}'
 VALUE '{value}'
-[ WITH TTL {ttl}];
+[ WITH TTL '{ttl}'];
 ```
 
 ##### Create examples
@@ -52,7 +52,7 @@ VALUE '86ebe1a0-11bf-11ed-aa8e-13602e2ad46b';
 ```ffly
 NEW 's2.8eqYursP2McHeQvHB2bauyE6n3vptOj8M96PxmGAQMDfimeZ31WAzP3hSw5Ixv5Y'
 VALUE '86ebe1a0-11bf-11ed-aa8e-13602e2ad46b'
-WITH TTL 604800;
+WITH TTL '604800';
 ```
 
 #### Fetch
@@ -82,7 +82,7 @@ but this action is very expensive and generally not recommended.
 
 ```ffly
 DROP '{key}';
-DROPALL '{value}';
+DROP ALL '{value}';
 ```
 
 ### Bitwise queries
@@ -106,7 +106,7 @@ query is unrecognized it will discard it.
     -   2: `GET VALUE`
     -   3: `GET TTL`
     -   4: `DROP`
-    -   5: `DROPALL`
+    -   5: `DROP ALL`
 -   The query type does not need to be delimited
 
 #### Bitwise create
