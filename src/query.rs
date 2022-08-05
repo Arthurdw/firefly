@@ -1,6 +1,3 @@
-// TODO: Remove when done with prototyping
-#![allow(dead_code)]
-
 use std::string::FromUtf8Error;
 
 use anyhow::{anyhow, Result};
