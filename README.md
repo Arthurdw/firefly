@@ -20,7 +20,7 @@ type is a string query. But this can be changed by using the `QUERY TYPE`
 keyword.
 
 ```ffly
-QUERY TYPE [STRING | BITWISE];
+QUERY TYPE 'STRING' | 'BITWISE';
 ```
 
 ### String queries
@@ -38,7 +38,7 @@ will use 0 _(aka no expiry)_.
 
 ```ffly
 NEW '{key}'
-VALUE '{value}'
+[ VALUE ] '{value}'
 [ WITH TTL '{ttl}'];
 ```
 

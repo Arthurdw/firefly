@@ -13,6 +13,8 @@ pub enum QueryType {
     GetTTL,
     Drop,
     DropAll,
+    QueryTypeString,
+    QueryTypeBitwise,
 }
 
 /// Each query type its defining syntax
@@ -23,6 +25,8 @@ const BINARY_VALUES: [(&[u8], QueryType); QueryType::COUNT] = [
     ("GETTTL".as_bytes(), QueryType::GetTTL),
     ("DROP".as_bytes(), QueryType::Drop),
     ("DROPALL".as_bytes(), QueryType::DropAll),
+    ("QUERYTYPESTRING".as_bytes(), QueryType::QueryTypeString),
+    ("QUERYTYPEBITWISE".as_bytes(), QueryType::QueryTypeBitwise),
 ];
 
 /// Derive the query type.
@@ -118,16 +122,22 @@ pub(crate) fn get_arguments(query: String) -> Result<Vec<String>, FromUtf8Error>
 pub fn parse_query(query: String) -> Result<(QueryType, Vec<String>)> {
     match get_query_type(query.clone()) {
         Some(query_type) => {
-            let mut arguments = get_arguments(query)?;
+            let expected_arg_count = match query_type {
+                QueryType::New => 3,
+                QueryType::QueryTypeString => 0,
+                QueryType::QueryTypeBitwise => 0,
+                _ => 1,
+            };
+
+            let mut arguments = if expected_arg_count == 0 {
+                Vec::new()
+            } else {
+                get_arguments(query)?
+            };
 
             if query_type == QueryType::New && arguments.len() == 2 {
                 arguments.push('0'.to_string());
             }
-
-            let expected_arg_count = match query_type {
-                QueryType::New => 3,
-                _ => 1,
-            };
 
             if expected_arg_count != arguments.len() {
                 return Err(anyhow!("Invalid amount of arguments: {}", arguments.len()));

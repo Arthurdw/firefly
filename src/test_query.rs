@@ -5,9 +5,6 @@ static QUERY_NEW: &'static str =
 
 static QUERY_GET: &'static str = "GET 'hi';";
 static QUERY_GETTTL: &'static str = "GET TTL 'hi';";
-static QUERY_GETVALUE: &'static str = "GET VALUE 'hi';";
-static QUERY_DROP: &'static str = "DROP 'hi';";
-static QUERY_DROPALL: &'static str = "DROP ALL 'value';";
 
 macro_rules! expect {
     ($expected:pat, $exec:expr) => {{
@@ -28,18 +25,6 @@ fn test_query_type_parse() {
     expect!(
         Some(QueryType::GetTTL),
         get_query_type(QUERY_GETTTL.to_string())
-    );
-    expect!(
-        Some(QueryType::GetValue),
-        get_query_type(QUERY_GETVALUE.to_string())
-    );
-    expect!(
-        Some(QueryType::Drop),
-        get_query_type(QUERY_DROP.to_string())
-    );
-    expect!(
-        Some(QueryType::DropAll),
-        get_query_type(QUERY_DROPALL.to_string())
     );
 }
 
