@@ -28,7 +28,11 @@ const BINARY_VALUES: [(&[u8], QueryType); QueryType::COUNT] = [
     ("DROPALL".as_bytes(), QueryType::DropAll),
 ];
 
-// TODO: properly document this
+/// Derive the query type.
+///
+/// Arguments
+///
+/// * `query` - The query which should be identifiable.
 pub(crate) fn get_query_type(query: String) -> Option<QueryType> {
     let mut matchable: Vec<(&[u8], QueryType)> = BINARY_VALUES.into();
     let mut last_match: Option<QueryType> = None;
@@ -72,7 +76,11 @@ const SINGLE_QUOTE: u8 = '\'' as u8;
 const DOUBLE_QUOTE: u8 = '"' as u8;
 const END_QUERY: u8 = ';' as u8;
 
-// TODO: properly document this
+/// Retrieve all query arguments.
+///
+/// Arguments
+///
+/// * `query` - The string which contains the arguments.
 pub(crate) fn get_arguments(query: String) -> Result<Vec<String>, FromUtf8Error> {
     let mut arguments = Vec::new();
     let mut current_argument = Vec::new();
@@ -104,7 +112,12 @@ pub(crate) fn get_arguments(query: String) -> Result<Vec<String>, FromUtf8Error>
     return Ok(arguments);
 }
 
-// TODO: properly document this
+/// Parse a query, this means that it will get the query type and its
+/// arguments.
+///
+/// Arguments
+///
+/// * `query` - The Firefly query.
 pub fn parse_query(query: String) -> Result<(QueryType, Vec<String>)> {
     match get_query_type(query.clone()) {
         Some(query_type) => {
