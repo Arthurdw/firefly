@@ -29,7 +29,7 @@ const BINARY_VALUES: [(&[u8], QueryType); QueryType::COUNT] = [
     ("QUERYTYPEBITWISE".as_bytes(), QueryType::QueryTypeBitwise),
 ];
 
-/// Derive the query type.
+/// Deduct the query type.
 ///
 /// Arguments
 ///

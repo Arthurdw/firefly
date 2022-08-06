@@ -87,6 +87,8 @@ DROP ALL '{value}';
 
 ### Bitwise queries
 
+**BITWISE QUERIES ARE NOT YET IMPLEMENTED!!**
+
 Because string queries can consume more resources than what is required, there
 is a more efficient _(less friendly)_ way to interact with Firefly. This is by
 sending the bits in a specific format. This section just describes the formats,
