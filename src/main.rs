@@ -3,21 +3,93 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
+use query::QueryType;
+use serialisation::Map;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
+use tokio::time::Instant;
 
+use std::collections::HashMap;
 use std::env;
 use std::error::Error;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::query::parse_query;
 
+mod ascii_optimisation;
 mod query;
+mod serialisation;
 
 #[cfg(test)]
 mod test_query;
 
+#[cfg(test)]
+mod test_serialisation;
+
+#[cfg(test)]
+mod test_ascii_optimisation;
+
 static LOGGING_ENV: &'static str = "LOG_LEVEL";
 static BIND_ADDR: &'static str = "127.0.0.1:46600";
+
+type Db = Arc<Mutex<Map>>;
+
+fn get_value<F>(db: MutexGuard<Map>, key: &str, format: F) -> String
+where
+    F: Fn((String, String)) -> String,
+{
+    match db.get(key) {
+        Some(value) => format(value.to_owned()),
+        None => "Error: Key not found!".to_string(),
+    }
+}
+
+fn execute_query(query_type: QueryType, arguments: Vec<String>, db: &Db) -> String {
+    let mut db = db.lock().unwrap();
+    let key = arguments[0].to_owned();
+
+    match query_type {
+        QueryType::New => {
+            db.insert(key, (arguments[1].to_owned(), arguments[2].to_owned()));
+            return "Success".to_string();
+        }
+        QueryType::Get => get_value(db, &key, |(value, ttl)| format!("{},{}", value, ttl)),
+        QueryType::GetValue => get_value(db, &key, |(value, _)| value),
+        QueryType::GetTTL => get_value(db, &key, |(_, ttl)| ttl),
+        QueryType::Drop => {
+            db.remove(&arguments[0]);
+            return "Success".to_string();
+        }
+        QueryType::DropAll => {
+            db.retain(|_, (value, _)| *value != arguments[0]);
+            return "Success".to_string();
+        }
+        QueryType::QueryTypeString => "QueryTypeString".to_string(),
+        QueryType::QueryTypeBitwise => "QueryTypeBitwise".to_string(),
+    }
+}
+
+fn process_query(db: Db, bytes: &[u8]) -> String {
+    let message = String::from_utf8(bytes.to_vec()).unwrap_or_default();
+    let mut res = String::default();
+    let valid_message = message != "" && message != "\n" && message.is_ascii();
+
+    if valid_message {
+        if let Ok((query_type, arguments)) = parse_query(message.clone()) {
+            let result = execute_query(query_type, arguments, &db);
+            debug!("{:?}", message);
+            res.push_str(&result);
+        } else {
+            res = "Could not properly parse query!".to_string();
+        }
+    } else {
+        res = "Invalid or empty query (all values must be valid ascii).".to_string();
+    }
+
+    res.push('\n');
+
+    return res;
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -30,9 +102,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind(BIND_ADDR).await?;
     info!("Listening on: {}", BIND_ADDR);
 
+    let db: Db = Arc::new(Mutex::new(HashMap::new()));
+
     loop {
         let (mut socket, addr) = listener.accept().await?;
         info!("New connection from {}", addr);
+        let db = db.clone();
 
         tokio::spawn(async move {
             let mut buf = vec![0; 1024];
@@ -47,22 +122,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     return;
                 }
 
-                let message = String::from_utf8(buf[..n].to_vec()).unwrap_or_default();
-                let mut res = "Successfully executed query!".to_string();
-                let valid_message = message != "" && message != "\n" && message.is_ascii();
-
-                if valid_message {
-                    if let Ok((query_type, arguments)) = parse_query(message.clone()) {
-                        debug!("{:?}", message);
-                        res.push_str(&format!(" ({:?}: {:?})", query_type, arguments));
-                    } else {
-                        res = "Could not properly parse query!".to_string();
-                    }
-                } else {
-                    res = "Invalid or empty query (all values must be valid ascii).".to_string();
-                }
-
-                res.push('\n');
+                let res = process_query(db.clone(), &buf[..n]);
 
                 socket
                     .write_all(res.as_bytes())
@@ -72,20 +132,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 }
-// use std::{collections::HashMap, fs::File, io::Write, time::Instant};
-//
-// use crate::ascii_optimisation::{compress_slice, decompress_slice};
-// use crate::serialisation::{from_slice, to_vec, Map};
-//
-// mod ascii_optimisation;
-// mod serialisation;
-//
-// #[cfg(test)]
-// mod test_serialisation;
-//
-// #[cfg(test)]
-// mod test_ascii_optimisation;
-//
 // fn main() {
 //     let sample: Map = {
 //         use rand::{distributions::Alphanumeric, Rng};
