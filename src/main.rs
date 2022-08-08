@@ -45,7 +45,7 @@ pub type Db = Arc<Mutex<Map>>;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     if env::var_os(LOGGING_ENV).is_none() {
-        env::set_var(LOGGING_ENV, "DEBUG");
+        env::set_var(LOGGING_ENV, "INFO");
     }
 
     pretty_env_logger::init_custom_env(LOGGING_ENV);
@@ -64,21 +64,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut buf = vec![0; MAX_QUERY_SIZE];
 
             loop {
-                let n = socket
-                    .read(&mut buf)
-                    .await
-                    .expect("failed to read data from socket");
+                let incoming = match socket.read(&mut buf).await {
+                    Ok(n) => n,
+                    Err(_) => break,
+                };
 
-                if n == 0 {
+                if incoming == 0 {
                     return;
                 }
 
-                let res = process_query(db.clone(), &buf[..n]);
+                let res = process_query(db.clone(), &buf[..incoming]);
 
-                socket
-                    .write_all(res.as_bytes())
-                    .await
-                    .expect("failed to write data to socket");
+                let response = socket.write_all(res.as_bytes()).await;
+
+                if let Err(_) = response {
+                    break;
+                }
             }
         });
     }
