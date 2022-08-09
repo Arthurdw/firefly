@@ -131,27 +131,3 @@ These are the two same create examples from the string queries:
 
 `4s2.8eqYursP2McHeQvHB2bauyE6n3vptOj8M96PxmGAQMDfimeZ31WAzP3hSw5Ixv5Y`
 `5s2.8eqYursP2McHeQvHB2bauyE6n3vptOj8M96PxmGAQMDfimeZ31WAzP3hSw5Ixv5Y`
-
-## Inner working
-
-### Serialization
-
-Firefly uses a custom minimalist serialization format. Since all values are
-always present, we can just add one delimiter byte to the start of each
-partition.
-
-The delimiter byte is a `NUL` byte, this byte is not allowed to be within the
-content of the message.
-
-### ASCII optimization
-
-Because we limit all our data to be valid ASCII, and ASCII only uses 7 bits,
-we can remove the bit from each byte, this results in a drastically smaller
-data size.
-
-```
-0011 0001 -> 0110 0010
-0011 0010 -> 1100 1001
-0011 0011 -> 1001 1011
-0011 0100 -> 0100 ....
-```

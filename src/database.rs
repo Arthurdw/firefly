@@ -1,6 +1,6 @@
 use std::sync::MutexGuard;
 
-use crate::{bitwise_query, query, query::QueryType, serialisation::Map, Db};
+use crate::{bitwise_query, query, query::QueryType, Db, Map};
 
 // TODO: Write some documentation
 fn get_value<F>(db: MutexGuard<Map>, key: &str, format: F) -> String
