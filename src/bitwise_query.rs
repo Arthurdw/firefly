@@ -8,35 +8,6 @@ use crate::query::{parse_query_arguments, QueryType};
 const DELIMITER: u8 = 0x0;
 
 // TODO: Write some documentation
-fn get_type(byte: u8) -> Option<QueryType> {
-    match byte as char {
-        '0' => Some(QueryType::New),
-        '1' => Some(QueryType::Get),
-        '2' => Some(QueryType::GetValue),
-        '3' => Some(QueryType::GetTTL),
-        '4' => Some(QueryType::Drop),
-        '5' => Some(QueryType::DropAll),
-        '6' => Some(QueryType::QueryTypeString),
-        '7' => Some(QueryType::QueryTypeBitwise),
-        _ => None,
-    }
-}
-
-// TODO: Write some documentation
-fn get_byte(qt: QueryType) -> u8 {
-    match qt {
-        QueryType::New => '0' as u8,
-        QueryType::Get => '1' as u8,
-        QueryType::GetValue => '2' as u8,
-        QueryType::GetTTL => '3' as u8,
-        QueryType::Drop => '4' as u8,
-        QueryType::DropAll => '5' as u8,
-        QueryType::QueryTypeString => '6' as u8,
-        QueryType::QueryTypeBitwise => '7' as u8,
-    }
-}
-
-// TODO: Write some documentation
 pub(crate) fn get_query_type(query: String) -> Option<QueryType> {
     let mut first_byte: Option<u8> = None;
 
@@ -49,7 +20,7 @@ pub(crate) fn get_query_type(query: String) -> Option<QueryType> {
         break;
     }
     return match first_byte {
-        Some(byte) => get_type(byte),
+        Some(byte) => QueryType::from_byte(byte),
         None => None,
     };
 }
@@ -66,7 +37,7 @@ pub(crate) fn get_arguments(
 
     for byte in query.bytes() {
         if !has_passed_identifier {
-            has_passed_identifier = byte == get_byte(query_type);
+            has_passed_identifier = byte == query_type.as_byte();
             continue;
         }
 

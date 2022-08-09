@@ -17,6 +17,42 @@ pub enum QueryType {
     QueryTypeBitwise,
 }
 
+impl QueryType {
+    /// Simply get the associated query type from a ascii character.
+    /// Returns `None` if the query type is not found.
+    ///
+    /// Arguments
+    ///
+    /// * `byte` - The byte which should be able to represent the query type.
+    pub fn from_byte(byte: u8) -> Option<QueryType> {
+        match byte as char {
+            '0' => Some(QueryType::New),
+            '1' => Some(QueryType::Get),
+            '2' => Some(QueryType::GetValue),
+            '3' => Some(QueryType::GetTTL),
+            '4' => Some(QueryType::Drop),
+            '5' => Some(QueryType::DropAll),
+            '6' => Some(QueryType::QueryTypeString),
+            '7' => Some(QueryType::QueryTypeBitwise),
+            _ => None,
+        }
+    }
+
+    /// Get the query identifier from a query type.
+    pub fn as_byte(&self) -> u8 {
+        match &self {
+            QueryType::New => '0' as u8,
+            QueryType::Get => '1' as u8,
+            QueryType::GetValue => '2' as u8,
+            QueryType::GetTTL => '3' as u8,
+            QueryType::Drop => '4' as u8,
+            QueryType::DropAll => '5' as u8,
+            QueryType::QueryTypeString => '6' as u8,
+            QueryType::QueryTypeBitwise => '7' as u8,
+        }
+    }
+}
+
 /// Each query type its defining syntax
 const BINARY_VALUES: [(&[u8], QueryType); QueryType::COUNT] = [
     ("NEW".as_bytes(), QueryType::New),
