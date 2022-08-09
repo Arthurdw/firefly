@@ -6,13 +6,12 @@ import time
 
 from multiprocessing import Process
 
-amount = 10_000
+amount = 1
 threads = 100
 total_time = 0
 
 
 def get_random_string(length):
-    # choose from all lowercase letter
     letters = string.ascii_lowercase
     result_str = "".join(random.choice(letters) for _ in range(length))
     return result_str
@@ -23,12 +22,13 @@ def fill_db():
     sock.connect(("127.0.0.1", 46_600))
 
     start = time.time()
+    sock.send(b"QUERY TYPE BITWISE;")
     for _ in range(amount):
         sock.send(
             (
                 f"NEW '{uuid.uuid4()}' "
                 + f"VALUE 's2.{get_random_string(64)}' "
-                + "WITH TTL '604800';"
+                + f"WITH TTL '{int(time.time()) + 604800}';"
             ).encode("ascii")
         )
 
@@ -52,9 +52,7 @@ if __name__ == "__main__":
     total_time = end - start
 
     print()
-    print(
-        f"Using {threads} (parralel) TCP connections which each sent {amount} requests"
-    )
+    print(f"Using {threads} (parralel) TCP connections (each {amount} req)")
     print(f"Total time: {total_time}")
     print(f"Total requests: {amount * threads}")
     print(f"Requests per second: {amount * threads / total_time}")

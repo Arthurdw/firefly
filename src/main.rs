@@ -13,8 +13,10 @@ use std::error::Error;
 use std::sync::{Arc, Mutex};
 
 use crate::database::process_query;
+use crate::query::QueryType;
 
 mod ascii_optimisation;
+mod bitwise_query;
 mod database;
 mod query;
 mod serialisation;
@@ -27,6 +29,9 @@ mod test_serialisation;
 
 #[cfg(test)]
 mod test_ascii_optimisation;
+
+#[cfg(test)]
+mod test_bitwise_query;
 
 static LOGGING_ENV: &'static str = "LOG_LEVEL";
 static BIND_ADDR: &'static str = "127.0.0.1:46600";
@@ -62,6 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         tokio::spawn(async move {
             let mut buf = vec![0; MAX_QUERY_SIZE];
+            let mut is_bitwise = false;
 
             loop {
                 let incoming = match socket.read(&mut buf).await {
@@ -73,9 +79,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     return;
                 }
 
-                let res = process_query(db.clone(), &buf[..incoming]);
-
+                let (query_type, res) = process_query(db.clone(), &buf[..incoming], is_bitwise);
                 let response = socket.write_all(res.as_bytes()).await;
+
+                match query_type {
+                    Some(QueryType::QueryTypeBitwise) => is_bitwise = true,
+                    Some(QueryType::QueryTypeString) => is_bitwise = false,
+                    _ => (),
+                }
 
                 if let Err(_) = response {
                     break;

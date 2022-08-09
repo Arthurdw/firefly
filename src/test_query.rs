@@ -6,6 +6,7 @@ static QUERY_NEW: &'static str =
 static QUERY_GET: &'static str = "GET 'hi';";
 static QUERY_GETTTL: &'static str = "GET TTL 'hi';";
 
+#[macro_export]
 macro_rules! expect {
     ($expected:pat, $exec:expr) => {{
         match $exec {

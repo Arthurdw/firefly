@@ -5,7 +5,7 @@ use strum::EnumCount;
 use strum_macros::EnumCount as EnumCountMacro;
 
 /// All possible query types
-#[derive(Debug, Clone, Copy, EnumCountMacro, PartialEq)]
+#[derive(Debug, Clone, Copy, EnumCountMacro, PartialEq, Eq)]
 pub enum QueryType {
     New,
     Get,
@@ -113,6 +113,36 @@ pub(crate) fn get_arguments(query: String) -> Result<Vec<String>, FromUtf8Error>
     return Ok(arguments);
 }
 
+// TODO: Write some documentation
+pub(crate) fn parse_query_arguments(
+    arguments_fetcher: impl Fn(String) -> Result<Vec<String>, FromUtf8Error>,
+    query_type: QueryType,
+    query: String,
+) -> Result<(QueryType, Vec<String>)> {
+    let expected_arg_count = match query_type {
+        QueryType::New => 3,
+        QueryType::QueryTypeString => 0,
+        QueryType::QueryTypeBitwise => 0,
+        _ => 1,
+    };
+
+    let mut arguments = if expected_arg_count == 0 {
+        Vec::new()
+    } else {
+        arguments_fetcher(query)?
+    };
+
+    if query_type == QueryType::New && arguments.len() == 2 {
+        arguments.push('0'.to_string());
+    }
+
+    if expected_arg_count != arguments.len() {
+        return Err(anyhow!("Invalid amount of arguments: {}", arguments.len()));
+    }
+
+    Ok((query_type, arguments))
+}
+
 /// Parse a query, this means that it will get the query type and its
 /// arguments.
 ///
@@ -121,30 +151,7 @@ pub(crate) fn get_arguments(query: String) -> Result<Vec<String>, FromUtf8Error>
 /// * `query` - The Firefly query.
 pub fn parse_query(query: String) -> Result<(QueryType, Vec<String>)> {
     match get_query_type(query.clone()) {
-        Some(query_type) => {
-            let expected_arg_count = match query_type {
-                QueryType::New => 3,
-                QueryType::QueryTypeString => 0,
-                QueryType::QueryTypeBitwise => 0,
-                _ => 1,
-            };
-
-            let mut arguments = if expected_arg_count == 0 {
-                Vec::new()
-            } else {
-                get_arguments(query)?
-            };
-
-            if query_type == QueryType::New && arguments.len() == 2 {
-                arguments.push('0'.to_string());
-            }
-
-            if expected_arg_count != arguments.len() {
-                return Err(anyhow!("Invalid amount of arguments: {}", arguments.len()));
-            }
-
-            Ok((query_type, arguments))
-        }
+        Some(query_type) => parse_query_arguments(get_arguments, query_type, query),
         None => Err(anyhow!("Invalid query type")),
     }
 }
