@@ -149,7 +149,15 @@ pub(crate) fn get_arguments(query: String) -> Result<Vec<String>, FromUtf8Error>
     return Ok(arguments);
 }
 
-// TODO: Write some documentation
+/// Parse a query its arguments and perform some checks on the validity of the
+/// query.
+/// Returns `None` if the query is not valid.
+///
+/// Arguments
+///
+/// * `arguments_fetcher` - A function which fetches the arguments from a query.
+/// * `query_type` - The already deduced type of the query.
+/// * `query` - The query which contains the arguments.
 pub(crate) fn parse_query_arguments(
     arguments_fetcher: impl Fn(String) -> Result<Vec<String>, FromUtf8Error>,
     query_type: QueryType,
