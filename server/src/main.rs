@@ -25,7 +25,7 @@ mod test_query;
 mod test_bitwise_query;
 
 static LOGGING_ENV: &'static str = "LOG_LEVEL";
-static DEFAULT_LOG_LEVEL: &'static str = "TRACE";
+static DEFAULT_LOG_LEVEL: &'static str = "INFO";
 static BIND_ADDR: &'static str = "127.0.0.1:46600";
 static MAX_QUERY_SIZE: usize = 512;
 

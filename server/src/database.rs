@@ -33,7 +33,7 @@ fn execute_query(query_type: QueryType, arguments: Vec<String>, db: &Db) -> Stri
             return "Ok".to_string();
         }
         QueryType::Get => get_value(db, &arguments[0], |(value, ttl)| {
-            format!("{},{}", value, ttl)
+            format!("{}\0{}", value, ttl)
         }),
         QueryType::GetValue => get_value(db, &arguments[0], |(value, _)| value),
         QueryType::GetTTL => get_value(db, &arguments[0], |(_, ttl)| ttl),
@@ -63,22 +63,23 @@ pub fn process_query(db: Db, bytes: &[u8], is_bitwise: bool) -> (Option<QueryTyp
         let parsed = if is_bitwise {
             bitwise_query::parse_query(message.clone())
         } else {
+            if message.contains(0 as char) {
+                res = "Non bitwise queries cannot contain null bytes".to_string();
+            }
             query::parse_query(message.clone())
         };
 
         if let Ok((qt, arguments)) = parsed {
             query_type = Some(qt);
             let result = execute_query(qt, arguments, &db);
-            debug!("{:?}", message);
             res.push_str(&result);
         } else {
             res = "Could not properly parse query!".to_string();
         }
     } else {
-        res = "Invalid or empty query (all values must be valid ascii).".to_string();
+        res = "Invalid or empty query (must be valid ascii).".to_string();
     }
 
-    res.push('\n');
     trace!("{:?}", res);
 
     return (query_type, res);
