@@ -40,7 +40,6 @@ pub type Changed = Arc<Mutex<usize>>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // TODO: Refactor this function
     if env::var_os(LOGGING_ENV).is_none() {
         env::set_var(LOGGING_ENV, DEFAULT_LOG_LEVEL);
     }
