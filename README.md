@@ -31,6 +31,10 @@ The simplest way to query something is by querying it using a string query. But
 because the parsing, and bandwidth of this is more than that is necessary we
 also provide bitwise queries.
 
+String queries are very loosely defined, as it evaluates the query definition
+from left to right. And can derive that if you use e.g. `GETV`, you mean
+`GET VALUE`. This works for any query, identifiers are case-insensitive.
+
 #### Create
 
 You can create a new record by using the `NEW` keyword, the arguments should be
