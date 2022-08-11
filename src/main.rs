@@ -41,22 +41,9 @@ static CLEAR_EVERY: u64 = 10;
 
 pub type Map = HashMap<String, (String, String)>;
 pub type Db = Arc<Mutex<Map>>;
+type Changed = Arc<Mutex<usize>>;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    // TODO: Refactor this function
-    if env::var_os(LOGGING_ENV).is_none() {
-        env::set_var(LOGGING_ENV, DEFAULT_LOG_LEVEL);
-    }
-
-    pretty_env_logger::init_custom_env(LOGGING_ENV);
-
-    let listener = TcpListener::bind(BIND_ADDR).await?;
-    info!("Binding connection to {}", BIND_ADDR);
-
-    let db: Db = Arc::new(Mutex::new(HashMap::new()));
-    let items_changed = Arc::new(Mutex::new(0));
-
+fn load_db(db: Db) {
     if Path::new(SAVE_TO).exists() {
         info!("Loading database from: {}", SAVE_TO);
         let start_load = Instant::now();
@@ -82,86 +69,99 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 start.elapsed(),
                 start_load.elapsed()
             );
+
             let mut db = db.lock().unwrap();
             *db = map;
         }
-    } else {
-        info!("Database file not found, starting fresh!");
     }
+}
 
-    {
-        let db = db.clone();
-        let changed = items_changed.clone();
+fn detect_changes(db: Db, changed: Changed) {
+    tokio::spawn(async move {
+        // TODO: Work away the unwraps
+        let duration = Duration::from_secs(SAVE_EVERY);
+        info!("Check for record changes every {} seconds", SAVE_EVERY);
 
-        tokio::spawn(async move {
-            // TODO: Work away the unwraps
-            let duration = Duration::from_secs(SAVE_EVERY);
-            info!("Check for record changes every {} seconds", SAVE_EVERY);
+        loop {
+            sleep(duration);
+            trace!("Checking if any data has been changed!");
 
-            loop {
-                sleep(duration);
-                trace!("Checking if any data has been changed!");
+            let mut changed = changed.lock().unwrap();
+            if *changed != 0 {
+                debug!("{} record(s) changed... writing the data!", *changed);
+                *changed = 0;
+                drop(changed);
+
+                let db = db.lock().unwrap();
+                let buffer = bincode::serialize(&db.to_owned()).unwrap();
+                drop(db);
+
+                let compressed = buffer;
+                let mut file = File::create(SAVE_TO).unwrap();
+                file.write_all(&compressed).unwrap();
+            }
+        }
+    });
+}
+
+fn detect_expirations(db: Db, changed: Changed) {
+    tokio::spawn(async move {
+        // TODO: Work away the unwraps
+        let duration = Duration::from_secs(CLEAR_EVERY);
+        info!(
+            "Checking for record expirations every {} seconds",
+            CLEAR_EVERY
+        );
+
+        loop {
+            sleep(duration);
+            trace!("Checking if record's got expired.");
+            let mut db = db.lock().unwrap();
+            let records = db.to_owned();
+
+            let current_epoch = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Woah, your system time is before the UNIX EPOCH!")
+                .as_secs()
+                .to_string();
+
+            for (key, (_, ttl)) in records {
+                if ttl == "0" {
+                    continue;
+                }
+
+                if ttl > current_epoch {
+                    continue;
+                }
+
+                trace!("Dropping record with key {}", key);
+                db.remove(&key);
 
                 let mut changed = changed.lock().unwrap();
-                if *changed != 0 {
-                    debug!("{} record(s) changed... writing the data!", *changed);
-                    *changed = 0;
-                    drop(changed);
-
-                    let db = db.lock().unwrap();
-                    let buffer = bincode::serialize(&db.to_owned()).unwrap();
-                    drop(db);
-
-                    let compressed = buffer;
-                    let mut file = File::create(SAVE_TO).unwrap();
-                    file.write_all(&compressed).unwrap();
-                }
+                *changed += 1;
             }
-        });
+        }
+    });
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    // TODO: Refactor this function
+    if env::var_os(LOGGING_ENV).is_none() {
+        env::set_var(LOGGING_ENV, DEFAULT_LOG_LEVEL);
     }
 
-    {
-        let db = db.clone();
-        let changed = items_changed.clone();
+    pretty_env_logger::init_custom_env(LOGGING_ENV);
 
-        tokio::spawn(async move {
-            // TODO: Work away the unwraps
-            let duration = Duration::from_secs(CLEAR_EVERY);
-            info!(
-                "Checking for record expirations every {} seconds",
-                CLEAR_EVERY
-            );
+    let listener = TcpListener::bind(BIND_ADDR).await?;
+    info!("Binding connection to {}", BIND_ADDR);
 
-            loop {
-                sleep(duration);
-                trace!("Checking if record's got expired.");
-                let mut db = db.lock().unwrap();
-                let records = db.to_owned();
+    let db: Db = Arc::new(Mutex::new(HashMap::new()));
+    let items_changed: Changed = Arc::new(Mutex::new(0));
 
-                let current_epoch = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .expect("Woah, your system time is before the UNIX EPOCH!")
-                    .as_secs()
-                    .to_string();
-
-                for (key, (_, ttl)) in records {
-                    if ttl == "0" {
-                        continue;
-                    }
-
-                    if ttl > current_epoch {
-                        continue;
-                    }
-
-                    trace!("Dropping record with key {}", key);
-                    db.remove(&key);
-
-                    let mut changed = changed.lock().unwrap();
-                    *changed += 1;
-                }
-            }
-        });
-    }
+    load_db(db.clone());
+    detect_changes(db.clone(), items_changed.clone());
+    detect_expirations(db.clone(), items_changed.clone());
 
     info!("Started listening for connections... ({})", BIND_ADDR);
     loop {
