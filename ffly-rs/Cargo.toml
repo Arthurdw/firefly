@@ -2,7 +2,7 @@
 name = "ffly-rs"
 version = "0.0.0"
 edition = "2021"
-description = "An \"blazingly\" fast key-value pair database without bloat written in rust"
+description = "A rust utility library for the Firefly key-value pair database."
 license = "MIT"
 
 
