@@ -1,4 +1,4 @@
-# Firefly
+![Firefly](./assets/logo.png)
 
 An optimized tweaked key-value pair database. It is a simple, fast, and secure.
 At [Xiler](https://www.xiler.net) it gets used to store and manage client
