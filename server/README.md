@@ -2,7 +2,13 @@
 
 The TCP server to handle firefly requests, this uses the Tokio runtime.
 
-## Running the server
+## Installing the server
+
+The [cargo ffly](https://crates.io/crates/ffly) crate can be used to install the server.
+
+`cargo install ffly`
+
+## Building the server
 
 ### Dependencies
 
