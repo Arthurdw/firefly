@@ -1,5 +1,7 @@
 ![Firefly](./assets/logo.png)
 
+> **⚠️ NOTE**: This project is still in development, and not yet ready for production usage.
+
 An optimized tweaked key-value pair database. It is a simple, fast, and secure.
 At [Xiler](https://www.xiler.net) it gets used to store and manage client
 sessions throughout the platform.
