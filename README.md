@@ -6,6 +6,14 @@ An optimized tweaked key-value pair database. It is a simple, fast, and secure.
 At [Xiler](https://www.xiler.net) it gets used to store and manage client
 sessions throughout the platform.
 
+## Installation
+
+**Cargo:**
+`$ cargo install ffly`
+
+**AUR:**
+`$ paru -S ffly`
+
 ## Query Language
 
 Firefly only has three data operators, `NEW`, `GET`, `DROP`. We'll walk over
