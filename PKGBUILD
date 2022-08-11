@@ -28,10 +28,7 @@ build() {
 
 package() {
     cd "firefly/server"
-
-    mv "target/release/firefly" "target/release/$pkgname"
     install -Dm0755 -t "$pkgdir/usr/bin/" "target/release/$pkgname"
-
 }
 
 check() {
