@@ -14,6 +14,13 @@ sessions throughout the platform.
 **AUR:**
 `$ paru -S ffly`
 
+## Future plans
+
+-   [ ] Make benchmarks
+-   [ ] Automatic cargo & AUR release
+-   [ ] Add clap-rs to make the config dynamic
+-   [ ] Add a docker image
+
 ## Query Language
 
 Firefly only has three data operators, `NEW`, `GET`, `DROP`. We'll walk over
