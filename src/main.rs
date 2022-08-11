@@ -3,23 +3,18 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
-use std::fs::File;
-use std::io::{Read, Write};
-use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::thread::sleep;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use crate::database::process_query;
-use crate::query::QueryType;
+use crate::connection::handle_connection;
+use crate::database::{detect_changes, detect_expirations, load_db};
 
 mod bitwise_query;
+mod connection;
 mod database;
 mod query;
 
@@ -41,108 +36,7 @@ static CLEAR_EVERY: u64 = 10;
 
 pub type Map = HashMap<String, (String, String)>;
 pub type Db = Arc<Mutex<Map>>;
-type Changed = Arc<Mutex<usize>>;
-
-fn load_db(db: Db) {
-    if Path::new(SAVE_TO).exists() {
-        info!("Loading database from: {}", SAVE_TO);
-        let start_load = Instant::now();
-        let mut file = File::open(SAVE_TO).unwrap();
-        info!("Reading data from file...");
-        let mut start = Instant::now();
-        let mut data = Vec::new();
-        file.read_to_end(&mut data).unwrap();
-
-        if data.len() < 1 {
-            warn!("No data found in file");
-        } else {
-            info!(
-                "Read {} bytes in {:.2?}, started deserialisation...",
-                data.len(),
-                start.elapsed()
-            );
-            start = Instant::now();
-            let map: Map = bincode::deserialize(&mut data).unwrap();
-            info!(
-                "Deserialised {} items in {:.2?}, finished loading in {:.2?}",
-                map.len(),
-                start.elapsed(),
-                start_load.elapsed()
-            );
-
-            let mut db = db.lock().unwrap();
-            *db = map;
-        }
-    }
-}
-
-fn detect_changes(db: Db, changed: Changed) {
-    tokio::spawn(async move {
-        // TODO: Work away the unwraps
-        let duration = Duration::from_secs(SAVE_EVERY);
-        info!("Check for record changes every {} seconds", SAVE_EVERY);
-
-        loop {
-            sleep(duration);
-            trace!("Checking if any data has been changed!");
-
-            let mut changed = changed.lock().unwrap();
-            if *changed != 0 {
-                debug!("{} record(s) changed... writing the data!", *changed);
-                *changed = 0;
-                drop(changed);
-
-                let db = db.lock().unwrap();
-                let buffer = bincode::serialize(&db.to_owned()).unwrap();
-                drop(db);
-
-                let compressed = buffer;
-                let mut file = File::create(SAVE_TO).unwrap();
-                file.write_all(&compressed).unwrap();
-            }
-        }
-    });
-}
-
-fn detect_expirations(db: Db, changed: Changed) {
-    tokio::spawn(async move {
-        // TODO: Work away the unwraps
-        let duration = Duration::from_secs(CLEAR_EVERY);
-        info!(
-            "Checking for record expirations every {} seconds",
-            CLEAR_EVERY
-        );
-
-        loop {
-            sleep(duration);
-            trace!("Checking if record's got expired.");
-            let mut db = db.lock().unwrap();
-            let records = db.to_owned();
-
-            let current_epoch = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("Woah, your system time is before the UNIX EPOCH!")
-                .as_secs()
-                .to_string();
-
-            for (key, (_, ttl)) in records {
-                if ttl == "0" {
-                    continue;
-                }
-
-                if ttl > current_epoch {
-                    continue;
-                }
-
-                trace!("Dropping record with key {}", key);
-                db.remove(&key);
-
-                let mut changed = changed.lock().unwrap();
-                *changed += 1;
-            }
-        }
-    });
-}
+pub type Changed = Arc<Mutex<usize>>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -159,54 +53,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let db: Db = Arc::new(Mutex::new(HashMap::new()));
     let items_changed: Changed = Arc::new(Mutex::new(0));
 
-    load_db(db.clone());
-    detect_changes(db.clone(), items_changed.clone());
-    detect_expirations(db.clone(), items_changed.clone());
+    load_db(db.clone(), SAVE_TO);
+    detect_changes(
+        db.clone(),
+        items_changed.clone(),
+        SAVE_TO.to_string(),
+        SAVE_EVERY,
+    );
+    detect_expirations(db.clone(), items_changed.clone(), CLEAR_EVERY);
 
     info!("Started listening for connections... ({})", BIND_ADDR);
     loop {
-        let (mut socket, addr) = listener.accept().await?;
+        let (socket, addr) = listener.accept().await?;
         info!("New connection from {}", addr);
-        let db = db.clone();
-        let changed = items_changed.clone();
-
-        tokio::spawn(async move {
-            let mut buf = vec![0; MAX_QUERY_SIZE];
-            let mut is_bitwise = false;
-
-            loop {
-                let incoming = match socket.read(&mut buf).await {
-                    Ok(n) if n == 0 => return,
-                    Ok(n) => n,
-                    Err(_) => break,
-                };
-
-                let (query_type, res) = process_query(db.clone(), &buf[..incoming], is_bitwise);
-                let response = socket.write_all(res.as_bytes()).await;
-
-                let mut changed_data = false;
-
-                {
-                    use QueryType::*;
-
-                    match query_type {
-                        Some(QueryTypeBitwise) => is_bitwise = true,
-                        Some(QueryTypeString) => is_bitwise = false,
-                        Some(New | Drop | DropAll) => changed_data = true,
-                        _ => (),
-                    }
-                }
-
-                if changed_data {
-                    // TODO: Work away the unwraps
-                    let mut changed = changed.lock().unwrap();
-                    *changed += 1;
-                }
-
-                if let Err(_) = response {
-                    break;
-                }
-            }
-        });
+        handle_connection(socket, MAX_QUERY_SIZE, db.clone(), items_changed.clone());
     }
 }
