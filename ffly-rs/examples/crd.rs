@@ -1,5 +1,5 @@
 /// Create, Read and Delete records example
-use ffly::FireflyStream;
+use ffly_rs::FireflyStream;
 
 static FIREFLY_ADDR: &'static str = "127.0.0.1:46600";
 

@@ -1,3 +1,4 @@
+// TODO: Write tests
 use core::fmt;
 use std::{
     error::Error,
@@ -15,9 +16,16 @@ pub type OptResult = FireflyResult<()>;
 pub type Data = FireflyResult<String>;
 
 pub struct FireflyStream {
+    /// The stream to the Firefly server.
     tcp_stream: Arc<Mutex<TcpStream>>,
+
+    /// The maximum length of the response. (size for response buffer)
     max_buffer_size: usize,
-    default_ttl: usize,
+
+    /// The default TTL for new records.
+    /// If this value is not zero, it will be added to the current timestamp.
+    /// So this is the TTL from when the new is executed.
+    pub default_ttl: usize,
 }
 
 #[derive(Debug)]
@@ -33,12 +41,24 @@ impl fmt::Display for FireflyError {
 }
 
 impl FireflyStream {
-    // TODO: Document this
+    /// Instantiate a new TCP connection with a Firefly server.
+    /// Fails if the connection cannot be established. The expected buffer
+    /// size is set to 512.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - The address of the Firefly server. (e.g. "127.0.0.1:46600")
     pub async fn connect(address: &str) -> FireflyResult<Self> {
         Self::connect_with_max_buffer(address, 512).await
     }
 
-    // TODO: Document this
+    /// Same as `FireflyStream::connect`, but with a custom buffer size.
+    /// The buffer size is the maximum expected response size.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - The address of the Firefly server. (e.g. "127.0.0.1:46600")
+    /// * `max_buffer_size` - The maximum expected response size.
     pub async fn connect_with_max_buffer(
         address: &str,
         max_buffer_size: usize,
@@ -55,6 +75,11 @@ impl FireflyStream {
         Ok(client)
     }
 
+    /// Send a slice of bytes to the Firefly server.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The slice of bytes to send.
     async fn send_no_check(&self, data: &[u8]) -> Data {
         let mut stream = self.tcp_stream.lock().unwrap();
         stream.write(data).await?;
@@ -67,7 +92,12 @@ impl FireflyStream {
         Ok(String::from_utf8(buffer[..response_size].to_vec()).unwrap())
     }
 
-    // TODO: Document this
+    /// The same as the `FireflyStream::send_no_check` method, but check the response.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The slice of bytes to send.
+    /// * `expected` - A closure predicate that returns true if the response is valid.
     async fn send(&self, data: &[u8], expected: fn(&str) -> bool) -> Data {
         let response = self.send_no_check(data).await?;
 
@@ -78,7 +108,12 @@ impl FireflyStream {
         Err(FireflyError::UnexpectedResponseError.into())
     }
 
-    // TODO: Document this
+    /// Same as send, but checks if the response contains "Ok" or doesn't
+    /// contain "Error".
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The slice of bytes to send.
     async fn send_ok(&self, data: &[u8]) -> Data {
         self.send(data, |expected| {
             expected == "Ok" || !expected.contains("Error")
@@ -86,14 +121,34 @@ impl FireflyStream {
         .await
     }
 
-    // TODO: Document this
+    /// Create a new record with the default TTL.
+    /// The default TTL is 0. (record lasts for ever)
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - Your unique key for the record.
+    /// * `value` - The value of the record.
     pub async fn new(&self, key: &str, value: &str) -> OptResult {
-        let ttl = self.default_ttl;
+        let mut ttl = self.default_ttl;
+
+        if ttl != 0 {
+            ttl += std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as usize;
+        }
 
         self.new_with_ttl(key, value, ttl).await
     }
 
-    // TODO: Document this
+    /// Same as `FireflyStream::new`, but with a custom TTL.
+    /// The TTL is the timestamp since the UNIX epoch.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - Your unique key for the record.
+    /// * `value` - The value of the record.
+    /// * `ttl` - The timestamp since the UNIX epoch for the data to expire. (0 = never)
     pub async fn new_with_ttl(&self, key: &str, value: &str, ttl: usize) -> OptResult {
         let query = format!("0{key}\0{value}\0{ttl}");
         self.send_ok(query.as_bytes()).await?;
@@ -101,37 +156,59 @@ impl FireflyStream {
         Ok(())
     }
 
-    // TODO: Document this
+    /// Get a record from the Firefly server. If you only need the value or ttl
+    /// use the specific methods for those purposes. As this returns both values.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the record.
     pub async fn get(&self, key: &str) -> FireflyResult<(String, String)> {
         let query = format!("1{key}");
         let data = self
-            .send(query.as_bytes(), |response| response.contains(','))
+            .send(query.as_bytes(), |response| response.contains(0 as char))
             .await?;
 
-        match data.split_once(',') {
+        match data.split_once(0 as char) {
             Some((value, ttl)) => Ok((value.to_string(), ttl.to_string())),
             None => Err(FireflyError::UnexpectedResponseError.into()),
         }
     }
 
-    // TODO: Document this
+    /// Same as `FireflyStream::get`, but only returns the value.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the record.
     pub async fn get_value(&self, key: &str) -> Data {
         self.send_ok(format!("2{key}").as_bytes()).await
     }
 
-    // TODO: Document this
+    /// Same as `FireflyStream::get`, but only returns the ttl.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the record.
     pub async fn get_ttl(&self, key: &str) -> FireflyResult<usize> {
         let ttl = self.send_ok(format!("3{key}").as_bytes()).await?;
         Ok(ttl.parse()?)
     }
 
-    // TODO: Document this
+    /// Remove a record from the Firefly server.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - The key of the record.
     pub async fn drop(&self, key: &str) -> OptResult {
         self.send_ok(format!("4{key}").as_bytes()).await?;
         Ok(())
     }
 
-    // TODO: Document this
+    /// Remove ALL records that have a certain value.
+    /// Using this method is generally discouraged. As it is a heavy operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The valy of ANY record that should be removed.
     pub async fn drop_values(&self, value: &str) -> OptResult {
         self.send_ok(format!("5{value}").as_bytes()).await?;
         Ok(())
