@@ -1,6 +1,6 @@
 [package]
 name = "ffly-rs"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 description = "A rust utility library for the Firefly key-value pair database."
 license = "MIT"
