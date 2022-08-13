@@ -44,6 +44,14 @@ impl fmt::Display for FireflyError {
     }
 }
 
+/// Get the amount of seconds since the UNIX epoch.
+fn current_epoch() -> usize {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as usize
+}
+
 impl FireflyStream {
     /// Instantiate a new TCP connection with a Firefly server.
     /// Fails if the connection cannot be established. The expected buffer
@@ -136,10 +144,7 @@ impl FireflyStream {
         let mut ttl = self.default_ttl;
 
         if ttl != 0 {
-            ttl += SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs() as usize;
+            ttl += current_epoch();
         }
 
         self.new_with_ttl(key, value, ttl).await
