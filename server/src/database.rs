@@ -9,7 +9,17 @@ use std::{
 
 use crate::{bitwise_query, query, query::QueryType, Changed, Db, Map};
 
-// TODO: Write some documentation
+/// Try to get a value from the database. If the value is not found, return
+/// an error string.
+///
+/// This allows us to blindly return the response to the client without having
+/// to worry about whether the value is found or not.
+///
+/// # Arguments
+///
+/// * `db` - The database to get the value from.
+/// * `key` - The key to get the value from.
+/// * `format` - A closure which should format the expected response.
 fn get_value<F>(db: MutexGuard<Map>, key: &str, format: F) -> String
 where
     F: Fn((String, String)) -> String,
@@ -20,7 +30,13 @@ where
     }
 }
 
-// TODO: Write some documentation
+/// Perform the proper action for the given query.
+///
+/// # Arguments
+///
+/// * `query_type` - The type of query to perform.
+/// * `arguments` - The arguments to the query.
+/// * `db` - The database to perform the action on.
 fn execute_query(query_type: QueryType, arguments: Vec<String>, db: &Db) -> String {
     let mut db = db.lock().unwrap();
 
@@ -50,8 +66,14 @@ fn execute_query(query_type: QueryType, arguments: Vec<String>, db: &Db) -> Stri
     }
 }
 
-// TODO: Write some documentation
-// TODO: Write tests
+/// Try to parse and execute a query. If something failed it will return an
+/// error describing the problem.
+///
+/// # Arguments
+///
+/// * `db` - The database to execute the query on.
+/// * `bytes` - The received query bytes.
+/// * `is_bitwise` - If the query should be parsed as a bitwise query.
 pub fn process_query(db: Db, bytes: &[u8], is_bitwise: bool) -> (Option<QueryType>, String) {
     let message = String::from_utf8(bytes.to_vec()).unwrap_or_default();
     let mut res = String::default();
@@ -85,7 +107,13 @@ pub fn process_query(db: Db, bytes: &[u8], is_bitwise: bool) -> (Option<QueryTyp
     return (query_type, res);
 }
 
-// TODO: Write some documentation
+/// Try to parse and fill a database from a file path. If the file does not
+/// exist it will do nothing.
+///
+/// # Arguments
+///
+/// * `db` - The database to fill.
+/// * `path` - The path to the file to parse.
 pub fn load_db(db: Db, path: &str) {
     if Path::new(path).exists() {
         info!("Loading database from: {}", path);
@@ -119,12 +147,22 @@ pub fn load_db(db: Db, path: &str) {
     }
 }
 
-// TODO: Write some documentation
-pub fn detect_changes(db: Db, changed: Changed, file_path: String, wait_for_save: u64) {
+/// Check if there were any changes detected. If there were write the data to a
+/// file. If no changes were detected do nothing.
+///
+/// This spawns a new tokio thread to check this every x seconds.
+///
+/// # Arguments
+///
+/// * `db` - The database to check for changes.
+/// * `changed` -  A mutex to check if there were any changes.
+/// * `file_path` - The path to the file to write to.
+/// * `interval` - The interval to check for changes.
+pub fn detect_changes(db: Db, changed: Changed, file_path: String, interval: u64) {
     tokio::spawn(async move {
         // TODO: Work away the unwraps
-        let duration = Duration::from_secs(wait_for_save);
-        info!("Check for record changes every {} seconds", wait_for_save);
+        let duration = Duration::from_secs(interval);
+        info!("Check for record changes every {} seconds", interval);
 
         loop {
             sleep(duration);
@@ -148,15 +186,19 @@ pub fn detect_changes(db: Db, changed: Changed, file_path: String, wait_for_save
     });
 }
 
-// TODO: Write some documentation
-pub fn detect_expirations(db: Db, changed: Changed, clear_every: u64) {
+/// An intensive routine to check if data has become invalid. (it ttl expired)
+/// It will drop any value that has expired.
+///
+/// # Arguments
+///
+/// * `db` - The database to check for expired values.
+/// * `changed` - A mutex to check if there were any changes.
+/// * `interval` - The interval to check for expired values.
+pub fn detect_expirations(db: Db, changed: Changed, interval: u64) {
     tokio::spawn(async move {
         // TODO: Work away the unwraps
-        let duration = Duration::from_secs(clear_every);
-        info!(
-            "Checking for record expirations every {} seconds",
-            clear_every
-        );
+        let duration = Duration::from_secs(interval);
+        info!("Checking for record expirations every {} seconds", interval);
 
         loop {
             sleep(duration);
@@ -171,13 +213,10 @@ pub fn detect_expirations(db: Db, changed: Changed, clear_every: u64) {
                 .to_string();
 
             for (key, (_, ttl)) in records {
-                if ttl == "0" {
+                if ttl == "0" || ttl > current_epoch {
                     continue;
                 }
 
-                if ttl > current_epoch {
-                    continue;
-                }
                 trace!("Dropping record with key {}", key);
                 db.remove(&key);
 
