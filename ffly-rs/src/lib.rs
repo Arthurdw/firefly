@@ -3,6 +3,7 @@ use core::fmt;
 use std::{
     error::Error,
     sync::{Arc, Mutex},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use tokio::{
@@ -10,10 +11,12 @@ use tokio::{
     net::TcpStream,
 };
 
+/// Catch-all error type
 pub type GenericError = Box<dyn Error + Send + Sync + 'static>;
+
 pub type FireflyResult<T> = Result<T, GenericError>;
 pub type OptResult = FireflyResult<()>;
-pub type Data = FireflyResult<String>;
+pub type StringResult = FireflyResult<String>;
 
 pub struct FireflyStream {
     /// The stream to the Firefly server.
@@ -30,6 +33,7 @@ pub struct FireflyStream {
 
 #[derive(Debug)]
 pub enum FireflyError {
+    /// The server returned a value which was not in the expected format.
     UnexpectedResponseError,
 }
 
@@ -80,7 +84,7 @@ impl FireflyStream {
     /// # Arguments
     ///
     /// * `data` - The slice of bytes to send.
-    async fn send_no_check(&self, data: &[u8]) -> Data {
+    async fn send_no_check(&self, data: &[u8]) -> StringResult {
         let mut stream = self.tcp_stream.lock().unwrap();
         stream.write(data).await?;
 
@@ -98,7 +102,7 @@ impl FireflyStream {
     ///
     /// * `data` - The slice of bytes to send.
     /// * `expected` - A closure predicate that returns true if the response is valid.
-    async fn send(&self, data: &[u8], expected: fn(&str) -> bool) -> Data {
+    async fn send(&self, data: &[u8], expected: fn(&str) -> bool) -> StringResult {
         let response = self.send_no_check(data).await?;
 
         if expected(&response) {
@@ -114,7 +118,7 @@ impl FireflyStream {
     /// # Arguments
     ///
     /// * `data` - The slice of bytes to send.
-    async fn send_ok(&self, data: &[u8]) -> Data {
+    async fn send_ok(&self, data: &[u8]) -> StringResult {
         self.send(data, |expected| {
             expected == "Ok" || !expected.contains("Error")
         })
@@ -132,8 +136,8 @@ impl FireflyStream {
         let mut ttl = self.default_ttl;
 
         if ttl != 0 {
-            ttl += std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
+            ttl += SystemTime::now()
+                .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_secs() as usize;
         }
@@ -179,7 +183,7 @@ impl FireflyStream {
     /// # Arguments
     ///
     /// * `key` - The key of the record.
-    pub async fn get_value(&self, key: &str) -> Data {
+    pub async fn get_value(&self, key: &str) -> StringResult {
         self.send_ok(format!("2{key}").as_bytes()).await
     }
 
