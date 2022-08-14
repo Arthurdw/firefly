@@ -1,8 +1,8 @@
 ![Firefly](./assets/logo.png)
 
-An optimized tweaked key-value pair database. It is a simple, fast, and secure.
-At [Xiler](https://www.xiler.net) it gets used to store and manage client
-sessions throughout the platform.
+A fast key-value pair in memory database. With a very simple and fast API. At
+[Xiler](https://www.xiler.net) it gets used to store and manage client sessions
+throughout the platform.
 
 ![CLI help menu](https://user-images.githubusercontent.com/38541241/184537875-5fcbdfd3-3da8-429e-ab34-f755e5ee3192.png)
 
