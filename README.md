@@ -27,13 +27,6 @@ sessions throughout the platform.
 
 _(`push_it` scripts can be found in `ffly-rs/examples/`)_
 
-## Future plans
-
--   [x] Add clap-rs to make the config dynamic
--   [x] Make benchmarks
--   [x] Add a docker image
--   [ ] Automatic cargo & AUR release
-
 ## Query Language
 
 Firefly only has three data operators, `NEW`, `GET`, `DROP`. We'll walk over
