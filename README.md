@@ -6,7 +6,7 @@ An optimized tweaked key-value pair database. It is a simple, fast, and secure.
 At [Xiler](https://www.xiler.net) it gets used to store and manage client
 sessions throughout the platform.
 
-![image](https://user-images.githubusercontent.com/38541241/184537875-5fcbdfd3-3da8-429e-ab34-f755e5ee3192.png)
+![CLI help menu](https://user-images.githubusercontent.com/38541241/184537875-5fcbdfd3-3da8-429e-ab34-f755e5ee3192.png)
 
 ## Installation
 
@@ -18,10 +18,10 @@ sessions throughout the platform.
 
 ## Future plans
 
--   [ ] Make benchmarks
+-   [x] Add clap-rs to make the config dynamic
 -   [ ] Automatic cargo & AUR release
--   [ ] Add clap-rs to make the config dynamic
 -   [ ] Add a docker image
+-   [ ] Make benchmarks
 
 ## Query Language
 
