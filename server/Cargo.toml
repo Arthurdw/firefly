@@ -1,13 +1,15 @@
 [package]
 name = "ffly"
-version = "0.0.0-dev"
+version = "0.0.1"
 edition = "2021"
-description = "An \"blazingly\" fast key-value pair database without bloat written in rust"
+description = "A \"blazingly\" fast key-value pair database without bloat written in rust."
 license = "MIT"
+authors = ["Arthurdw <contact@arthurdw.com>"]
 
 [dependencies]
 anyhow = "1.0.59"
 bincode = "1.3.3"
+clap = { version = "3.2.17", features = ["clap_derive", "derive"] }
 log = "0.4.17"
 pretty_env_logger = "0.4.0"
 strum = "0.24.1"
