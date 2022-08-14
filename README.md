@@ -14,6 +14,9 @@ sessions throughout the platform.
 **AUR:**
 `$ paru -S ffly`
 
+**Docker image:**
+[arthurdw/firefly](https://hub.docker.com/repository/docker/arthurdw/firefly)
+
 ## Performance comparison
 
 | Database                                         | ops  |
@@ -28,8 +31,8 @@ _(`push_it` scripts can be found in `ffly-rs/examples/`)_
 
 -   [x] Add clap-rs to make the config dynamic
 -   [x] Make benchmarks
+-   [x] Add a docker image
 -   [ ] Automatic cargo & AUR release
--   [ ] Add a docker image
 
 ## Query Language
 

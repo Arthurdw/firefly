@@ -11,6 +11,9 @@ The [cargo ffly](https://crates.io/crates/ffly) crate can be used to install the
 Or install it from the AUR.
 `$ paru -S ffly`
 
+For testing purposes you can also use the docker image:
+[arthurdw/firefly](https://hub.docker.com/repository/docker/arthurdw/firefly)
+
 ## Building the server
 
 ### Dependencies
