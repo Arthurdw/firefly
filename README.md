@@ -16,12 +16,22 @@ sessions throughout the platform.
 **AUR:**
 `$ paru -S ffly`
 
+## Performance comparison
+
+| Database                                         | ops  |
+| ------------------------------------------------ | ---- |
+| Firefly                                          | 167k |
+| [Skytable](https://github.com/skytable/skytable) | 143k |
+| [Redis](https://github.com/redis/redis)          | 67k  |
+
+_(`push_it` scripts can be found in `ffly-rs/examples/`)_
+
 ## Future plans
 
 -   [x] Add clap-rs to make the config dynamic
+-   [x] Make benchmarks
 -   [ ] Automatic cargo & AUR release
 -   [ ] Add a docker image
--   [ ] Make benchmarks
 
 ## Query Language
 
