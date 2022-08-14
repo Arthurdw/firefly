@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{rename, File},
     io::{Read, Write},
     path::Path,
     sync::MutexGuard,
@@ -178,9 +178,12 @@ pub fn detect_changes(db: Db, changed: Changed, file_path: String, interval: u64
                 let buffer = bincode::serialize(&db.to_owned()).unwrap();
                 drop(db);
 
-                let compressed = buffer;
+                if Path::new(&file_path).exists() {
+                    rename(&file_path, format!("{}{}", file_path, ".bak")).unwrap();
+                }
+
                 let mut file = File::create(&file_path).unwrap();
-                file.write_all(&compressed).unwrap();
+                file.write_all(&buffer).unwrap();
             }
         }
     });

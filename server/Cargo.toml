@@ -1,6 +1,6 @@
 [package]
 name = "ffly"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "A \"blazingly\" fast key-value pair database without bloat written in rust."
 license = "MIT"

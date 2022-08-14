@@ -40,14 +40,13 @@ async fn main() {
     );
     let start = Instant::now();
     futures::future::join_all(futures).await;
+    let elapsed = start.elapsed();
     println!(
         "Created {} new records by using {} connections in {:?}.",
-        REQUESTS_TOTAL,
-        THREADS,
-        start.elapsed()
+        REQUESTS_TOTAL, THREADS, elapsed
     );
     println!(
         "This comes down to {} requests per second.",
-        REQUESTS_TOTAL / start.elapsed().as_secs() as usize
+        REQUESTS_TOTAL / elapsed.as_secs() as usize
     );
 }

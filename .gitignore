@@ -1,4 +1,4 @@
 */target
-*.bincode
+*.bincode*
 
 ffly-rs/Cargo.lock
