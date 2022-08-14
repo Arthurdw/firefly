@@ -1,7 +1,7 @@
 pkgbase = ffly
 	pkgdesc = An "blazingly" fast key-value pair database without bloat written in rust
-	pkgver = 0.0.0
-	pkgrel = 1
+	pkgver = 0.0.1
+	pkgrel = 2
 	url = https://github.com/Arthurdw/firefly
 	arch = x86_64
 	arch = i686
