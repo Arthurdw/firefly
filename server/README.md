@@ -12,7 +12,7 @@ Or install it from the AUR.
 `$ paru -S ffly`
 
 For testing purposes you can also use the docker image:
-[arthurdw/firefly](https://hub.docker.com/repository/docker/arthurdw/firefly)
+[arthurdw/firefly](https://hub.docker.com/r/arthurdw/firefly)
 
 ## Building the server
 

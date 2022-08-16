@@ -15,7 +15,7 @@ throughout the platform.
 `$ paru -S ffly`
 
 **Docker image:**
-[arthurdw/firefly](https://hub.docker.com/repository/docker/arthurdw/firefly)
+[arthurdw/firefly](https://hub.docker.com/r/arthurdw/firefly)
 
 ## Performance comparison
 
