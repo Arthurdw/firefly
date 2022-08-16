@@ -98,7 +98,6 @@ impl FireflyStream {
 
         let mut buffer = vec![0; self.max_buffer_size];
         let response_size = stream.read(&mut buffer).await?;
-        drop(stream);
 
         // The server will ALWAYS return valid utf8
         Ok(String::from_utf8(buffer[..response_size].to_vec()).unwrap())
