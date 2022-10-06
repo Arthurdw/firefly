@@ -1,0 +1,163 @@
+openapi: 3.1.0
+x-stoplight:
+  id: gk4z418s7jc81
+info:
+  title: firefly REST
+  version: '1.0'
+  description: Easily use the firefly DB over the HTTP protocol with a REST based API.
+  summary: A firefly rest implementation
+  contact:
+    name: Arthur De Witte
+    url: www.arthurdw.com
+    email: dev@arthurdw.com
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  '{key}':
+    post:
+      summary: SET
+      operationId: post-new
+      responses:
+        '200':
+          description: OK
+      description: 'Set a new value to a key, the request body will be the value.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                example-1:
+                  value: my value
+                  ttl: 0
+              properties:
+                value:
+                  type: string
+                  example: my secret key
+                ttl:
+                  type: integer
+                  default: 0
+              required:
+                - value
+      tags:
+        - set
+    parameters:
+      - schema:
+          type: string
+        name: key
+        in: path
+        description: The key for the pair
+        required: true
+    get:
+      summary: GET
+      operationId: get-key
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  example-1:
+                    ttl: 0
+                    value: my value
+                properties:
+                  ttl:
+                    type: integer
+                  value:
+                    type: string
+                required:
+                  - ttl
+                  - value
+      description: Fetch a value and its ttl
+      tags:
+        - get
+        - ttl
+        - value
+    delete:
+      summary: DELETE
+      operationId: delete-key
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+      description: Delete a key-value pair.
+      tags:
+        - delete
+  '/{key}/ttl':
+    parameters:
+      - schema:
+          type: string
+        name: key
+        in: path
+        required: true
+        description: The unique identifier for the value
+    get:
+      summary: GET TTL
+      tags:
+        - get
+        - ttl
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  example-1:
+                    value: value
+                    ttl: 0
+                properties:
+                  ttl:
+                    type: integer
+                required:
+                  - ttl
+        '404':
+          description: Not Found
+      operationId: get-key-ttl
+      description: Fetch a ttl
+  '/{key}/value':
+    parameters:
+      - schema:
+          type: string
+        name: key
+        in: path
+        required: true
+        description: The unique identifier for the value
+    get:
+      summary: GET VALUE
+      tags:
+        - get
+        - value
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  example-1:
+                    value: value
+                    ttl: 0
+                properties:
+                  value:
+                    type: string
+                required:
+                  - value
+        '404':
+          description: Not Found
+      operationId: get-key-value
+      description: Fetch a value
+components:
+  schemas: {}
+  responses: {}
+tags:
+  - name: delete
+  - name: get
+  - name: set
+  - name: ttl
+  - name: value
