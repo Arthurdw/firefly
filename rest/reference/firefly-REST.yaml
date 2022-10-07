@@ -20,6 +20,16 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                x-examples:
+                  example-1:
+                    status: ok
       description: 'Set a new value to a key, the request body will be the value.'
       requestBody:
         content:
@@ -70,6 +80,8 @@ paths:
                 required:
                   - ttl
                   - value
+        '404':
+          description: Not Found
       description: Fetch a value and its ttl
       tags:
         - get
