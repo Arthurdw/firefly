@@ -164,6 +164,28 @@ paths:
           description: Not Found
       operationId: get-key-value
       description: Fetch a value
+  /:
+    parameters: []
+    delete:
+      summary: ''
+      operationId: delete-by-value
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: string
+                x-examples:
+                  example-1:
+                    value: ''
+      description: Delete all pairs that match a value
+      tags:
+        - delete
+        - value
 components:
   schemas: {}
   responses: {}
