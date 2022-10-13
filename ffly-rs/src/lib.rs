@@ -127,7 +127,7 @@ impl FireflyStream {
     /// * `data` - The slice of bytes to send.
     async fn send_ok(&self, data: &[u8]) -> StringResult {
         self.send(data, |expected| {
-            expected == "Ok" || !expected.contains("Error")
+            expected.contains("Ok") || !expected.contains("Error")
         })
         .await
     }
@@ -170,14 +170,14 @@ impl FireflyStream {
     /// # Arguments
     ///
     /// * `key` - The key of the record.
-    pub async fn get(&self, key: &str) -> FireflyResult<(String, String)> {
+    pub async fn get(&self, key: &str) -> FireflyResult<(String, usize)> {
         let query = format!("1{key}");
         let data = self
             .send(query.as_bytes(), |response| response.contains(0 as char))
             .await?;
 
         match data.split_once(0 as char) {
-            Some((value, ttl)) => Ok((value.to_string(), ttl.to_string())),
+            Some((value, ttl)) => Ok((value.to_string(), ttl.parse().unwrap())),
             None => Err(FireflyError::UnexpectedResponseError.into()),
         }
     }
