@@ -2,13 +2,14 @@
 use core::fmt;
 use std::{
     error::Error,
-    sync::{Arc, Mutex},
+    sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
+    sync::Mutex,
 };
 
 /// Catch-all error type
@@ -93,7 +94,7 @@ impl FireflyStream {
     ///
     /// * `data` - The slice of bytes to send.
     async fn send_no_check(&self, data: &[u8]) -> StringResult {
-        let mut stream = self.tcp_stream.lock().unwrap();
+        let mut stream = self.tcp_stream.lock().await;
         stream.write(data).await?;
 
         let mut buffer = vec![0; self.max_buffer_size];
