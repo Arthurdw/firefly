@@ -1,17 +1,17 @@
 [package]
 name = "ffly-rs"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2021"
 description = "A rust utility library for the Firefly key-value pair database."
 license = "MIT"
 
 
 [dependencies]
-tokio = { version = "1.20.1", features = ["full"] }
+tokio = { version = "1.20", features = ["full"] }
 
 [dev-dependencies]
-fastrand = "1.8.0"
-futures = "0.3.23"
-redis = "0.21.5"
-skytable = { version = "0.7.1", features = ["tokio", "aio"] }
-uuid = { version = "1.1.2", features = ["v4"] }
+fastrand = "1.8"
+futures = "0.3"
+redis = "0.22"
+skytable = { version = "0.7", features = ["tokio", "aio"] }
+uuid = { version = "1.1", features = ["v4"] }
