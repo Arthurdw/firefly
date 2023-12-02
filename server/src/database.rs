@@ -3,9 +3,9 @@ use std::{
     io::{Read, Write},
     path::Path,
     sync::MutexGuard,
-    thread::sleep,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
+use tokio::time::sleep;
 
 use crate::{bitwise_query, query, query::QueryType, Changed, Db, Map};
 
@@ -165,7 +165,7 @@ pub fn detect_changes(db: Db, changed: Changed, file_path: String, interval: u64
         info!("Check for record changes every {} seconds", interval);
 
         loop {
-            sleep(duration);
+            sleep(duration).await;
             trace!("Checking if any data has been changed!");
 
             let mut changed = changed.lock().unwrap();
@@ -204,7 +204,7 @@ pub fn detect_expirations(db: Db, changed: Changed, interval: u64) {
         info!("Checking for record expirations every {} seconds", interval);
 
         loop {
-            sleep(duration);
+            sleep(duration).await;
             trace!("Checking if record's got expired.");
             let mut db = db.lock().unwrap();
             let records = db.to_owned();
